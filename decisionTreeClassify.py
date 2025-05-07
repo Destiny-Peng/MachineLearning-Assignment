@@ -65,23 +65,7 @@ class DecisionTree:
         for feature_index in features_indices:
             X_column = X[:, feature_index]
             # 尝试判断特征是连续还是离散 (这是一个简化判断)
-            # 如果唯一值数量大于某个比例（比如10个，或者总样本的1/5），认为是连续的
-            # 或者我们可以预先定义哪些是连续的
-            # For Titanic: Pclass, Sex, Embarked are discrete. Age, Fare, SibSp, Parch can be continuous or discrete.
-            # Let's assume for now we can pass this info or infer it.
-            # A simple heuristic: if dtype is float or many unique values, treat as continuous.
-
-            # Simplified: Treat as continuous if more than 10 unique values and numeric
-            # Otherwise, treat as discrete. This needs refinement for real-world scenarios.
-            # For this example, let's assume we know which are continuous.
-            # Let's say 'Age' (index 2) and 'Fare' (index 4) are continuous in our preprocessed X
-            # Pclass (0), Sex (1), SibSp (3), Parch (5), Embarked (6) are discrete
-
-            # A more robust way is to pass feature_types (continuous/discrete)
-            # For now, let's use a placeholder for feature type detection
-            # For simplicity, let's treat features with > 10 unique values as continuous
-            # and others as discrete. This is a heuristic.
-
+            # 如果唯一值数量大于某个比例（比如10个，或者总样本的1/5），认为是连续的，或者使用先验知识判断是否是连续值
             is_continuous_feature = False
             if self.feature_names:  # If feature names are available
                 feature_name = self.feature_names[feature_index]
@@ -140,15 +124,6 @@ class DecisionTree:
             return {'label': Counter(y).most_common(1)[0][0]}
 
         # 更新可用特征 (对于离散特征，一旦使用就不再使用；连续特征可以多次使用，但通常在不同节点)
-        # For simplicity in this ID3-like version, once a feature is used for a split,
-        # it's often removed from consideration for child nodes in that path.
-        # However, for continuous features, they can be split on different thresholds.
-        # A common simplification is to remove the feature if discrete, or keep if continuous.
-        # Here, we'll pass all features down, but a feature won't be chosen if it offers no gain.
-
-        # For discrete features, we create a branch for each value.
-        # For continuous features, we create two branches (left/right).
-
         feature_name_to_display = self.feature_names[best_feature_idx] if self.feature_names else best_feature_idx
 
         if is_continuous:
@@ -357,17 +332,6 @@ if __name__ == '__main__':
         # Load fresh test data for eval
         test_df_for_eval = pd.read_csv('test.csv')
 
-        # Merge test features with labels for evaluation
-        # Ensure PassengerId is present for merging if needed, or align by index
-        # For simplicity, assuming test_df and submission_df are ordered correctly by PassengerId
-
-        # Preprocess test_df (X_test)
-        # We need to pass the mean_age and mode_embarked from training set
-        # And also the embarked_map for consistent encoding
-
-        # Simplified preprocessing for test data (aligning with how preprocess_data is structured)
-        # We need to ensure 'Embarked' in test_df is mapped using train_embarked_map
-
         # Create a copy for preprocessing
         processed_test_df = test_df_for_eval.copy()
 
@@ -418,30 +382,3 @@ if __name__ == '__main__':
         print(f"\nError during test set evaluation: {e}")
         import traceback
         traceback.print_exc()
-
-    # Example of predicting a single instance:
-    # Pclass, Sex, Age, SibSp, Parch, Fare, Embarked
-    # Example: 3rd class, male, 22 years, 1 sibling, 0 parents/children, fare 7.25, S (Southampton)
-    # Preprocessing for this sample:
-    # Pclass: 3
-    # Sex: 0 (male)
-    # Age: 22
-    # SibSp: 1
-    # Parch: 0
-    # Fare: 7.25
-    # Embarked: 'S' -> map to its numerical value from train_embarked_map
-    # Find 'S' in train_embarked_map. If train_df['Embarked'].unique() was ['S', 'C', 'Q'], then S=0, C=1, Q=2
-    # Let's check the actual map used:
-    # temp_embarked_map_for_example = {label: idx for idx, label in enumerate(train_df['Embarked'].fillna(mode_embarked).unique())}
-    # print("Example Embarked Map:", temp_embarked_map_for_example)
-    # embarked_s_value = temp_embarked_map_for_example.get('S', -1) # Default if S not in map (should be)
-
-    # sample_to_predict = np.array([[3, 0, 22, 1, 0, 7.25, embarked_s_value]])
-    # if embarked_s_value != -1 and dt_classifier.tree is not None:
-    #     try:
-    #         prediction = dt_classifier.predict(sample_to_predict)
-    #         print(f"\nPrediction for sample {sample_to_predict}: {'Survived' if prediction[0] == 1 else 'Did not survive'}")
-    #     except Exception as e:
-    #         print(f"Error predicting sample: {e}")
-    # else:
-    #     print("\nCould not make sample prediction (embarked mapping issue or tree not trained).")
