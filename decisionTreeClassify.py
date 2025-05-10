@@ -370,6 +370,9 @@ if __name__ == '__main__':
             y_test_pred = dt_classifier.predict(X_test)
             test_accuracy = np.mean(y_test_pred == y_test_actual)
             print(f"Test Accuracy: {test_accuracy:.4f}")
+            # 将结果输出为csv文件
+            submission_df['Survived'] = y_test_pred
+            submission_df.to_csv('output_submission.csv', index=False)
         else:
             print(
                 "Test data and submission labels count mismatch. Cannot calculate test accuracy.")
